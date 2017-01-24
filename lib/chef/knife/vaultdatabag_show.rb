@@ -24,8 +24,8 @@ class Chef
 
       def run
         verify_args!
-        print_vault(name_args[0]) if name_args.size == 1
-        print_vault_item(name_args[0], name_args[1]) if name_args.size == 2
+        print_secret(name_args[0]) if name_args.size == 1
+        print_secret_item(name_args[0], name_args[1]) if name_args.size == 2
       end
     end
   end

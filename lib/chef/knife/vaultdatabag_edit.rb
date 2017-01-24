@@ -19,7 +19,7 @@ class Chef
 
       def run
         verify_args!
-        edit_vault_item(name_args[0], name_args[1]) if name_args.size == 2
+        edit_secret_item(name_args[0], name_args[1])
       end
     end
   end
