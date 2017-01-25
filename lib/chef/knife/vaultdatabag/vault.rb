@@ -61,7 +61,7 @@ class Chef
         # read file
         item_content = File.open(tmp_file, 'rb') { |f| f.read }
 
-        # validate json
+        # validate json and id field
         unless valid_databag_item?(item_content)
           error_and_exit "invalid databag item, 'id' field must exist"
           File.delete(tmp_file)
@@ -76,6 +76,28 @@ class Chef
 
         # delete file
         File.delete(tmp_file)
+      end
+
+      def edit_secret_item_from_file(secret, file)
+        puts "#{secret} #{file}"
+        # read file
+        item_content = File.open(file, 'rb') { |f| f.read }
+
+        # validate json and id field
+        unless valid_databag_item?(item_content)
+          error_and_exit "invalid databag item, 'id' field must exist"
+          File.delete(tmp_file)
+        end
+        unless valid_json?(item_content)
+          error_and_exit "Invalid json syntax for #{secret}/#{item}"
+          File.delete(tmp_file)
+        end
+
+        # write content to vault
+        Vault.logical.write("secret/#{secret}",
+          data = { JSON.parse(item_content)["id"] => item_content})
+
+
       end
 
 
