@@ -30,7 +30,8 @@ class Chef
       end
 
       def secret_item_exists?(secret,item)
-        secret_data(secret)[item.to_sym].nil?
+        return true unless secret_data(secret)[item.to_sym].nil?
+        return false
       end
 
       def vault_sealed?
@@ -102,14 +103,35 @@ class Chef
           log_error_and_exit "#{secret}/#{item} already exist"
         end
 
-        secret_hash[item.to_sym] = "{}"
+        secret_hash[item.to_sym] = "{\"id\": \"#{item}\"}"
 
         # write content to vault
         Vault.logical.write("secret/#{secret}", secret_hash)
       end
 
+      def delete_secret(secret, item=nil)
+        if item
+          unless secret_item_exists?(secret,item)
+            log_error_and_exit "#{secret}/#{item} does not exist"
+          end
+
+          # get existing secret content
+          secret_hash = copy_frozen_hash(secret_data(secret))
+          secret_hash.delete(item.to_sym)
+
+          # write content to vault
+          Vault.logical.write("secret/#{secret}", secret_hash)
+        else
+          unless secret_exists?(secret)
+            log_error_and_exit "secret #{secret} does not exist"
+          end
+
+          Vault.logical.delete("secret/#{secret}")
+        end
+      end
+
       def edit_secret_item(secret, item)
-        if secret_item_exists?(secret,item)
+        unless secret_item_exists?(secret,item)
           log_error_and_exit("Cannot load secret item #{secret}/#{item}")
         end
 
