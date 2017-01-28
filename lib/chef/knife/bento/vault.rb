@@ -3,7 +3,6 @@ require 'vault'
 class Chef
   class Knife
     module BentoBase
-
       def vault_sealed?
         Vault.sys.seal_status.sealed?
       end
@@ -13,7 +12,7 @@ class Chef
         loop do
           shard = ask "#{Vault.sys.seal_status.t -
                          Vault.sys.seal_status.progress} " \
-                         "keys left to unseal, enter next key:"
+                         'keys left to unseal, enter next key:'
           Vault.sys.unseal(shard.strip)
           break unless vault_sealed?
         end
@@ -41,7 +40,7 @@ class Chef
         secret_data = {}
         Vault.with_retries(Vault::HTTPConnectionError, attempts: 5) do
           return secret_data if
-            secret_data = Vault.logical.read("secret/#{secret}").data
+            secret_data = Vault.logical.read("secret/#{secret}").data # rubocop:disable Lint/AssignmentInCondition
         end
       rescue
         log_error_and_exit 'could not retreive secret, verify name or connection'

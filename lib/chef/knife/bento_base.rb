@@ -41,10 +41,20 @@ class Chef
 
       def vault_ssl_pem_file
         path = Chef::Config[:knife][:vault_ssl_pem_file]
-        return if path.nil?
-        log_error_and_exit(
-          "Path '#{path}' is not a valid file"
-        ) unless File.file?(path)
+
+        if path.nil?
+          log_error_and_exit(
+            'Empty path for vault_ssl_pem_file'
+          )
+        end
+
+        unless File.file?(path)
+          log_error_and_exit(
+            "Path for vault_ssl_pem_file '#{path}' is not a valid file"
+          )
+        end
+
+        path
       end
 
       def vault_ssl_verify
