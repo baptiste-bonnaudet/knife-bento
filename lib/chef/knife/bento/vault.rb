@@ -3,6 +3,36 @@ require 'vault'
 class Chef
   class Knife
     module BentoBase
+
+      def copy_frozen_hash(secret)
+        return secret.inject({}) do |new, (name, value)|
+            new[name] = value;
+            new
+        end
+      end
+
+      def secret_data(secret)
+        secret_data = {}
+        Vault.with_retries(Vault::HTTPConnectionError, attempts: 5) do
+          return secret_data if
+            secret_data = Vault.logical.read("secret/#{secret}").data # rubocop:disable Lint/AssignmentInCondition
+        end
+      rescue
+        log_error_and_exit 'could not retreive secret, verify name or connection'
+      end
+
+      def list_secrets!
+        puts Vault.logical.list("secret")
+      end
+
+      def secret_exists?(secret)
+        Vault.logical.list("secret").include?(secret)
+      end
+
+      def secret_item_exists?(secret,item)
+        secret_data(secret)[item.to_sym].nil?
+      end
+
       def vault_sealed?
         Vault.sys.seal_status.sealed?
       end
@@ -19,6 +49,7 @@ class Chef
       end
 
       def ask_unseal_vault
+        return unless vault_sealed?
         confirm = ask(
           'Vault is sealed do you want to unseal it? [Y/N] '
         ) { |yn| yn.limit = 1, yn.validate = /[yn]/i }
@@ -34,16 +65,6 @@ class Chef
           'Do you have great sureness? [Y/N] '
         ) { |yn| yn.limit = 1, yn.validate = /[yn]/i }
         Vault.sys.seal if confirm
-      end
-
-      def secret_data(secret)
-        secret_data = {}
-        Vault.with_retries(Vault::HTTPConnectionError, attempts: 5) do
-          return secret_data if
-            secret_data = Vault.logical.read("secret/#{secret}").data # rubocop:disable Lint/AssignmentInCondition
-        end
-      rescue
-        log_error_and_exit 'could not retreive secret, verify name or connection'
       end
 
       def print_secret(secret)
@@ -73,7 +94,25 @@ class Chef
         false
       end
 
+      def create_secret_item(secret, item)
+        # get existing secret content
+        secret_hash = copy_frozen_hash(secret_data(secret))
+
+        if secret_item_exists?(secret,item)
+          log_error_and_exit "#{secret}/#{item} already exist"
+        end
+
+        secret_hash[item.to_sym] = "{}"
+
+        # write content to vault
+        Vault.logical.write("secret/#{secret}", secret_hash)
+      end
+
       def edit_secret_item(secret, item)
+        if secret_item_exists?(secret,item)
+          log_error_and_exit("Cannot load secret item #{secret}/#{item}")
+        end
+
         # read item
         item_content = secret_data(secret)[item.to_sym]
         item_content = '' if item_content.to_s.strip.empty?
@@ -88,24 +127,30 @@ class Chef
         # read file
         item_content = File.open(tmp_file, 'rb', &:read)
 
+        # delete file
+        File.delete(tmp_file)
+
         # validate json and id field
         unless valid_databag_item?(item_content)
           log_error_and_exit "invalid databag item, 'id' field must exist"
-          File.delete(tmp_file)
         end
         unless valid_json?(item_content)
           log_error_and_exit "Invalid json syntax for #{secret}/#{item}"
-          File.delete(tmp_file)
+        end
+        unless secret_item_exists?(secret,item)
+            log_error_and_exit "Name mismatch, create item first"
         end
 
-        # write content to vault
-        Vault.logical.write("secret/#{secret}", item => item_content)
+        # get existing secret content
+        secret_hash = copy_frozen_hash(secret_data(secret))
+        secret_hash[JSON.parse(item_content)['id'].to_sym] = item_content
 
-        # delete file
-        File.delete(tmp_file)
+        # write content to vault
+        Vault.logical.write("secret/#{secret}", secret_hash)
       end
 
       def edit_secret_item_from_file(secret, file)
+
         # read file
         item_content = File.open(file, 'rb', &:read)
 
@@ -119,10 +164,14 @@ class Chef
           File.delete(tmp_file)
         end
 
+        # get existing secret content
+        secret_hash = copy_frozen_hash(secret_data(secret))
+        secret_hash[JSON.parse(item_content)['id'].to_sym] = item_content
+
         # write content to vault
         Vault.logical.write(
           "secret/#{secret}",
-          JSON.parse(item_content)['id'] => item_content
+          secret_hash
         )
       end
     end

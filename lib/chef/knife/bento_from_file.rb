@@ -23,7 +23,7 @@ class Chef
 
       def run
         verify_args!
-        unseal_vault!
+        ask_unseal_vault
         vault_auth!
         edit_secret_item_from_file(name_args[0], name_args[1])
       end
