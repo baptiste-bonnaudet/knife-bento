@@ -1,9 +1,9 @@
 class Chef
   class Knife
-    class VaultdatabagEdit < Chef::Knife
-      include VaultdatabagBase
+    class BentoEdit < Chef::Knife
+      include BentoBase
 
-      banner "knife vault edit PATH (ITEM)"
+      banner 'knife bento edit PATH (ITEM)'
 
       def verify_args!
         if name_args.size == 2
@@ -19,6 +19,8 @@ class Chef
 
       def run
         verify_args!
+        unseal_vault!
+        vault_auth!
         edit_secret_item(name_args[0], name_args[1])
       end
     end

@@ -1,7 +1,7 @@
 class Chef
   class Knife
-    class VaultdatabagDebug < Chef::Knife
-      include VaultdatabagBase
+    class BentoDebug < Chef::Knife
+      include BentoBase
 
       deps do
         require 'pry'

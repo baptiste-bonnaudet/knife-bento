@@ -1,13 +1,13 @@
 # -*- encoding: utf-8 -*-
 $LOAD_PATH.push File.expand_path('../lib', __FILE__)
-require 'knife-vaultdatabag/version'
+require 'knife-bento/version'
 
 Gem::Specification.new do |s|
-  s.name         = 'knife-vaultdatabag'
-  s.version      = KnifeVaultdatabag::VERSION
+  s.name         = 'knife-bento'
+  s.version      = KnifeBento::VERSION
   s.authors      = ['Baptiste.Bonnaudet']
   s.email        = ['baptiste.bonnaudet@lightspeedretail.com']
-  #s.homepage     = 'https://github.com/lightspeedretail/knife-vaultdatabag.git'
+  # s.homepage     = 'https://github.com/lightspeedretail/knife-bento.git'
   s.summary      = 'Manage hashicorp vault through knife plugin'
   s.description  = 'show, edit, debug'
   s.license      = 'Nonstandard'
