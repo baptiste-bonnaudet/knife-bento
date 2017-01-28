@@ -2,12 +2,11 @@ require 'vault'
 
 class Chef
   class Knife
-    module BentoBase
-
+    module BentoBase # rubocop:disable Metrics/ModuleLength
       def copy_frozen_hash(secret)
-        return secret.inject({}) do |new, (name, value)|
-            new[name] = value;
-            new
+        secret.each_with_object({}) do |(name, value), new|
+          new[name] = value
+          new
         end
       end
 
@@ -22,16 +21,16 @@ class Chef
       end
 
       def list_secrets!
-        puts Vault.logical.list("secret")
+        puts Vault.logical.list('secret')
       end
 
       def secret_exists?(secret)
-        Vault.logical.list("secret").include?(secret)
+        Vault.logical.list('secret').include?(secret)
       end
 
-      def secret_item_exists?(secret,item)
+      def secret_item_exists?(secret, item)
         return true unless secret_data(secret)[item.to_sym].nil?
-        return false
+        false
       end
 
       def vault_sealed?
@@ -99,7 +98,7 @@ class Chef
         # get existing secret content
         secret_hash = copy_frozen_hash(secret_data(secret))
 
-        if secret_item_exists?(secret,item)
+        if secret_item_exists?(secret, item)
           log_error_and_exit "#{secret}/#{item} already exist"
         end
 
@@ -109,9 +108,9 @@ class Chef
         Vault.logical.write("secret/#{secret}", secret_hash)
       end
 
-      def delete_secret(secret, item=nil)
+      def delete_secret(secret, item = nil)
         if item
-          unless secret_item_exists?(secret,item)
+          unless secret_item_exists?(secret, item)
             log_error_and_exit "#{secret}/#{item} does not exist"
           end
 
@@ -131,7 +130,7 @@ class Chef
       end
 
       def edit_secret_item(secret, item)
-        unless secret_item_exists?(secret,item)
+        unless secret_item_exists?(secret, item)
           log_error_and_exit("Cannot load secret item #{secret}/#{item}")
         end
 
@@ -159,8 +158,8 @@ class Chef
         unless valid_json?(item_content)
           log_error_and_exit "Invalid json syntax for #{secret}/#{item}"
         end
-        unless secret_item_exists?(secret,item)
-            log_error_and_exit "Name mismatch, create item first"
+        unless secret_item_exists?(secret, item)
+          log_error_and_exit 'Name mismatch, create item first'
         end
 
         # get existing secret content
@@ -172,7 +171,6 @@ class Chef
       end
 
       def edit_secret_item_from_file(secret, file)
-
         # read file
         item_content = File.open(file, 'rb', &:read)
 

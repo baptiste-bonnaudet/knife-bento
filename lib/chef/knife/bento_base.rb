@@ -90,7 +90,7 @@ class Chef
       end
 
       def vault_config
-        Vault.configure do |config|
+        Vault.configure do |config| # rubocop:disable Metrics/BlockLength
           log_debug "vault_address: #{Chef::Config[:knife][:vault_address]}"
           log_debug "vault_token: #{Chef::Config[:knife][:vault_token]}"
           log_debug "vault_ssl_pem_file: #{Chef::Config[:knife][:vault_ssl_pem_file]}"
