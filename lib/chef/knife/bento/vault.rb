@@ -95,11 +95,15 @@ class Chef
       end
 
       def create_secret_item(secret, item)
-        # get existing secret content
-        secret_hash = copy_frozen_hash(secret_data(secret))
+        if secret_exists?(secret)
+          # get existing secret content
+          secret_hash = copy_frozen_hash(secret_data(secret))
 
-        if secret_item_exists?(secret, item)
-          log_error_and_exit "#{secret}/#{item} already exist"
+          if secret_item_exists?(secret, item)
+            log_error_and_exit "#{secret}/#{item} already exist"
+          end
+        else
+          secret_hash = {}
         end
 
         secret_hash[item.to_sym] = "{\"id\": \"#{item}\"}"
@@ -118,8 +122,13 @@ class Chef
           secret_hash = copy_frozen_hash(secret_data(secret))
           secret_hash.delete(item.to_sym)
 
-          # write content to vault
-          Vault.logical.write("secret/#{secret}", secret_hash)
+          if secret_hash.empty?
+            puts "#{item} was the last item in secret #{secret}, removing secret"
+            delete_secret(secret)
+          else
+            # write content to vault
+            Vault.logical.write("secret/#{secret}", secret_hash)
+          end
         else
           unless secret_exists?(secret)
             log_error_and_exit "secret #{secret} does not exist"
