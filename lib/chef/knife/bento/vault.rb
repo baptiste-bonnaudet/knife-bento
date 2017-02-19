@@ -113,6 +113,13 @@ class Chef
       end
 
       def delete_secret(secret, item = nil)
+
+        print_item = item || '*'
+        confirm = ask(
+          "Are you sure you want to delete secret #{secret}/#{print_item}? [Y/N] "
+        ) { |yn| yn.limit = 1, yn.validate = /[yn]/i }
+        exit unless confirm.casecmp('y').zero?
+
         if item
           unless secret_item_exists?(secret, item)
             log_error_and_exit "#{secret}/#{item} does not exist"
@@ -193,8 +200,12 @@ class Chef
           File.delete(tmp_file)
         end
 
-        # get existing secret content
-        secret_hash = copy_frozen_hash(secret_data(secret))
+        # get existing secret content if it exists
+        if secret_exists?(secret)
+          secret_hash = copy_frozen_hash(secret_data(secret))
+        else
+          secret_hash = Hash.new
+        end
         secret_hash[JSON.parse(item_content)['id'].to_sym] = item_content
 
         # write content to vault

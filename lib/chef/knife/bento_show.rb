@@ -3,7 +3,7 @@ class Chef
     class BentoShow < Chef::Knife
       include BentoBase
 
-      banner 'knife bento edit PATH [ITEM]'
+      banner 'knife bento show PATH [ITEM]'
 
       def verify_args!
         if name_args.size == 1

@@ -6,6 +6,8 @@ require 'highline/import'
 class Chef
   class Knife
     module BentoBase
+      VALID_NAME = /^[\.\-[:alnum:]_]+$/
+
       def log_error_and_exit(*messages)
         messages.each { |m| ui.error m }
         exit 1
@@ -17,11 +19,11 @@ class Chef
 
       # checks
       def valid_path?(path)
-        path[/[a-zA-Z.-_]+/] == path || false
+        return path =~ VALID_NAME
       end
 
       def valid_item?(item)
-        item[/[a-zA-Z.-_]+/] == item || false
+        return item =~ VALID_NAME
       end
 
       def valid_file?(path)
