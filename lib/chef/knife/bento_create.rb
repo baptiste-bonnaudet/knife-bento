@@ -19,6 +19,7 @@ class Chef
 
       def run
         verify_args!
+        vault_config!
         ask_unseal_vault
         vault_auth!
         create_secret_item(name_args[0], name_args[1])

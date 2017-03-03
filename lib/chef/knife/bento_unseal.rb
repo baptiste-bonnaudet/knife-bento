@@ -6,6 +6,7 @@ class Chef
       banner 'knife bento unseal'
 
       def run
+        vault_config!
         unseal_vault!
       end
     end

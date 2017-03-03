@@ -6,6 +6,8 @@ class Chef
       banner 'knife bento list'
 
       def run
+        vault_config!
+        vault_auth!
         list_secrets!
       end
     end

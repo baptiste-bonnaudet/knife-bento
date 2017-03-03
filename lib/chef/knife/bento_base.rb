@@ -37,8 +37,11 @@ class Chef
       end
 
       def vault_token
-        Chef::Config[:knife][:vault_token] ||
-          log_error_and_exit('Invalid Vault Token, check knife configuration')
+        Chef::Config[:knife][:vault_token] || ENV["VAULT_TOKEN"]
+      end
+
+      def vault_github_token
+        Chef::Config[:knife][:vault_github_token] || ENV["VAULT_AUTH_GITHUB_TOKEN"]
       end
 
       def vault_ssl_pem_file
@@ -91,10 +94,11 @@ class Chef
         log_error_and_exit "vault_read_timeout must be positive (#{timeout})"
       end
 
-      def vault_config
+      def vault_config!
         Vault.configure do |config| # rubocop:disable Metrics/BlockLength
           log_debug "vault_address: #{Chef::Config[:knife][:vault_address]}"
-          log_debug "vault_token: #{Chef::Config[:knife][:vault_token]}"
+          log_debug "vault_token: #{vault_token}"
+          log_debug "vault_github_token: #{vault_github_token}"
           log_debug "vault_ssl_pem_file: #{Chef::Config[:knife][:vault_ssl_pem_file]}"
           log_debug "vault_ssl_verify: #{Chef::Config[:knife][:vault_ssl_verify]}"
           log_debug "vault_timeout: #{Chef::Config[:knife][:vault_timeout]}"
@@ -106,7 +110,9 @@ class Chef
           config.address = vault_address
 
           # The token to authenticate with Vault, also read as ENV["VAULT_TOKEN"]
-          config.token = vault_token
+          unless vault_token.nil?
+            config.token = vault_token
+          end
 
           # Custom SSL PEM, also read as ENV["VAULT_SSL_CERT"]
           unless Chef::Config[:knife][:vault_ssl_pem_file].nil?
@@ -141,7 +147,11 @@ class Chef
       end
 
       def vault_auth!
-        vault_config
+        if vault_token
+          Vault.auth.token(vault_token)
+        else
+          Vault.auth.github(vault_github_token)
+        end
       end
     end
   end

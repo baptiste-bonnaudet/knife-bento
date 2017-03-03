@@ -24,6 +24,7 @@ class Chef
 
       def run
         verify_args!
+        vault_config!
         ask_unseal_vault
         vault_auth!
         delete_secret(name_args[0]) if name_args.size == 1
